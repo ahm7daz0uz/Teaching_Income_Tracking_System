@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <!-- Content Security Policy لتحسين الأمان -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Income Tracker System</title>
+  <!-- ربط ملف manifest -->
+  <link rel="manifest" href="manifest.json">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome for Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <!-- استيراد خط Tajawal من Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+  <!-- تضمين مكتبة html2pdf (لم تعد مستخدمة هنا) -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- تضمين مكتبة SheetJS (XLSX) مع defer -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg-color: #f8f9fa;
+      --text-color: #000;
+      --report-bg: #ffffff;
+      --button-color: #007bff;
+    }
+    body {
+      font-family: 'Tajawal', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      direction: rtl;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    /* ترويسة الموقع */
+    .header {
+      background: linear-gradient(to left, var(--button-color), #00c6ff);
+      color: #fff;
+      text-align: center;
+      padding: 30px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      margin-bottom: 20px;
+    }
+    .header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+    .header p {
+      font-size: 1.2rem;
+    }
+    .btn-danger-custom {
+      background-color: #dc3545;
+      border-color: #dc3545;
+    }
+    .btn-success-custom {
+      background-color: #28a745;
+      border-color: #28a745;
+    }
+    .status-red {
+      color: #dc3545;
+      font-weight: bold;
+    }
+    .status-green {
+      color: #28a745;
+      font-weight: bold;
+    }
+    .report {
+      margin-top: 20px;
+      padding: 20px;
+      background-color: var(--report-bg);
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: transform 0.2s ease;
+    }
+    .icon-btn:hover {
+      transform: scale(1.05);
+    }
+    .hidden {
+      display: none;
+    }
+    .selected-item {
+      background-color: #d1e7dd !important;
+      font-weight: bold;
+    }
+    .list-group-item:hover {
+      cursor: pointer;
+      background-color: #e9ecef;
+      transition: background-color 0.2s ease;
+    }
+    /* تنسيق العناوين الرئيسية */
+    .section-header {
+      position: relative;
+      text-align: center;
+      margin: 20px 0;
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--text-color);
+    }
+    .section-header::before,
+    .section-header::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 30%;
+      height: 2px;
+      background: var(--text-color);
+    }
+    .section-header::before { left: 0; }
+    .section-header::after { right: 0; }
+    .section-header span {
+      padding: 0 10px;
+      background: var(--bg-color);
+      position: relative;
+      z-index: 1;
+    }
+    .monthly-report-header {
+      font-size: 1.2rem;
+      font-weight: normal;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    /* زر تثبيت التطبيق مخفي من العرض */
+    #installBtn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      display: none;
+    }
+    .input-group-text {
+      background-color: var(--button-color);
+      color: #fff;
+      border: none;
+    }
+    .form-control:focus {
+      box-shadow: none;
+      border-color: var(--button-color);
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .fade-in { animation: fadeIn 0.5s; }
+    tbody tr:hover { background-color: #f1f1f1; }
+    .toast { min-width: 250px; }
+  </style>
+</head>
+<body>
+  <!-- زر تثبيت التطبيق (مخفي من العرض) -->
+  <button id="installBtn" class="btn btn-primary">
+    <i class="fas fa-download"></i> تثبيت التطبيق
+  </button>
+
+  <!-- Toast Notification Container -->
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+    <div id="toastContainer" class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <!-- سيتم تعبئة محتوى الرسالة من خلال جافاسكريبت -->
+        <div class="toast-body" id="toastMessage"></div>
+        <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header Section -->
+  <div class="container header fade-in">
+    <h1><i class="fas fa-cash-register"></i> متابعة دخل الدروس</h1>
+    <p>نظام ذكى لمتابعة دخل دروسك بسهولة ودقة</p>
+  </div>
+  
+  <!-- خانة البحث عن طالب -->
+  <div class="container mt-3 fade-in">
+    <div class="input-group">
+      <span class="input-group-text"><i class="fas fa-search"></i></span>
+      <input type="text" id="studentSearchInput" class="form-control" placeholder="ابحث عن طالب بالاسم..." aria-label="Search student">
+      <button id="searchStudentBtn" class="btn btn-primary">بحث</button>
+    </div>
+  </div>
+
+  <!-- تقرير تفصيلي للطالب -->
+  <div id="studentDetailReportContainer" class="container mt-3 hidden fade-in">
+    <div class="section-header"><span>تقرير تفصيلي للطالب</span></div>
+    <div id="studentDetailReportContent"></div>
+  </div>
+
+  <!-- تقرير شامل لجميع الأشهر -->
+  <div class="container report mt-3 fade-in">
+    <div class="section-header"><span><i class="fas fa-chart-bar"></i> تقرير شامل لجميع الأشهر</span></div>
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>شهر</th>
+          <th>المبلغ المدفوع</th>
+          <th>المبلغ غير المدفوع</th>
+        </tr>
+      </thead>
+      <tbody id="summaryTableBody"></tbody>
+    </table>
+    <div class="mt-3">
+      <button id="saveAllPdfBtn" class="btn btn-primary">
+        <i class="fas fa-file-excel"></i> حفظ التقرير بصيغة إكسيل
+      </button>
+    </div>
+  </div>
+
+  <!-- قائمة الأشهر -->
+  <div class="container mt-3 fade-in">
+    <div class="section-header"><span><i class="fas fa-calendar-alt"></i> قائمة الأشهر</span></div>
+    <div class="mb-3">
+      <button id="addMonthBtn" class="btn btn-primary icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="اضغط لإضافة شهر جديد">
+        <i class="fas fa-calendar-plus"></i> إضافة شهر جديد
+      </button>
+    </div>
+    <p class="small text-muted">انقر على الشهر من القائمة لفتح قسم إدارة الصفوف</p>
+    <ul id="monthsList" class="list-group"></ul>
+  </div>
+
+  <!-- تقرير شهري للشهر المُختار -->
+  <div id="monthlyReportContainer" class="container mt-3 hidden fade-in">
+    <h4 class="monthly-report-header">تقرير شهري للشهر المُختار</h4>
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>الصف</th>
+          <th>المبلغ المدفوع</th>
+          <th>المبلغ غير المدفوع</th>
+        </tr>
+      </thead>
+      <tbody id="monthlyReport"></tbody>
+    </table>
+  </div>
+
+  <!-- إدارة الصفوف -->
+  <div id="classManagement" class="container mt-5 hidden fade-in">
+    <div class="section-header"><span><i class="fas fa-book"></i> إدارة الصفوف</span></div>
+    <div class="mb-3">
+      <button id="addClassBtn" class="btn btn-primary icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="اضغط لإضافة صف جديد">
+        <i class="fas fa-book"></i> إضافة صف جديد
+      </button>
+    </div>
+    <p class="small text-muted">انقر على الصف من القائمة لفتح قسم إدارة الطلاب</p>
+    <ul id="classesList" class="list-group mt-3"></ul>
+  </div>
+
+  <!-- إدارة الطلاب -->
+  <div id="studentManagement" class="container mt-5 hidden fade-in">
+    <div class="section-header"><span><i class="fas fa-users"></i> إدارة الطلاب</span></div>
+    <form id="addStudentForm">
+      <div class="mb-3">
+        <label for="studentName" class="form-label">اسم الطالب</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-graduation-cap"></i></span>
+          <input type="text" class="form-control" id="studentName" placeholder="اسم الطالب" required aria-label="Student Name">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label for="studentAmount" class="form-label">المبلغ (بالجنيه)</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-pound-sign"></i></span>
+          <input type="number" class="form-control" id="studentAmount" placeholder="المبلغ" required aria-label="Amount in EGP">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="اضغط لإضافة الطالب">
+        إضافة الطالب
+      </button>
+    </form>
+    <table class="table table-bordered mt-3 fade-in">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>اسم الطالب</th>
+          <th>المبلغ</th>
+          <th>حالة السداد</th>
+          <th>العمليات</th>
+        </tr>
+      </thead>
+      <tbody id="studentsTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- مودال إضافة شهر جديد -->
+  <div class="modal fade" id="addMonthModal" tabindex="-1" aria-labelledby="addMonthModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addMonthModalLabel">إضافة شهر جديد</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="addMonthForm">
+            <div class="mb-3">
+              <label for="monthName" class="form-label">اسم الشهر</label>
+              <input type="text" class="form-control" id="monthName" placeholder="اسم الشهر" required>
+            </div>
+            <button type="submit" class="btn btn-primary">إضافة الشهر</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال إضافة صف جديد -->
+  <div class="modal fade" id="addClassModal" tabindex="-1" aria-labelledby="addClassModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addClassModalLabel">إضافة صف جديد</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="addClassForm">
+            <div class="mb-3">
+              <label for="className" class="form-label">اسم الصف</label>
+              <input type="text" class="form-control" id="className" placeholder="اسم الصف" required>
+            </div>
+            <button type="submit" class="btn btn-primary">إضافة الصف</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Bundle with Popper.js -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // تفعيل التلميحات
+    const tooltipTriggerList = Array.from(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(tooltipTriggerEl => {
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // دالة Toast تظهر الرسالة لمدة 1000 مللي ثانية
+    function showToast(message, type) {
+      const toastEl = document.getElementById("toastContainer");
+      const toastBody = document.getElementById("toastMessage");
+      toastBody.innerHTML = `<div style="display: flex; align-items: center; width: 100%;">
+        <span>${message}</span>
+      </div>`;
+      toastEl.classList.remove("bg-success", "bg-danger", "bg-warning", "bg-info", "text-white", "text-dark");
+      if (type === "success") {
+        toastEl.classList.add("bg-success", "text-white");
+      } else if (type === "error") {
+        toastEl.classList.add("bg-danger", "text-white");
+      } else if (type === "warning") {
+        toastEl.classList.add("bg-warning", "text-dark");
+      } else if (type === "info") {
+        toastEl.classList.add("bg-info", "text-white");
+      }
+      const toast = new bootstrap.Toast(toastEl, { delay: 1000 });
+      toastEl.addEventListener("click", function hideToastOnClick() {
+        toast.hide();
+        toastEl.removeEventListener("click", hideToastOnClick);
+      });
+      toast.show();
+    }
+
+    // تعديل حالة السداد
+    function togglePaymentStatus(studentId) {
+      const student = currentClass.students.find(s => s.id === studentId);
+      if (student) {
+        student.status = student.status === "لم يتم الدفع" ? "تم الدفع" : "لم يتم الدفع";
+        updateLocalStorage();
+        updateStudentsTable();
+        showToast("تم تغيير حالة السداد بنجاح", "success");
+      }
+    }
+
+    let months = [];
+    let currentMonth = null;
+    let currentClass = null;
+
+    function updateLocalStorage() {
+      localStorage.setItem('months', JSON.stringify(months));
+    }
+
+    function loadData() {
+      const savedData = localStorage.getItem('months');
+      if (savedData) {
+        months = JSON.parse(savedData);
+      }
+    }
+
+    loadData();
+    generateSummaryReport();
+    updateMonthsList();
+
+    function generateSummaryReport() {
+      const summaryTableBody = document.getElementById('summaryTableBody');
+      summaryTableBody.innerHTML = '';
+      let totalPaid = 0, totalUnpaid = 0;
+      months.forEach(month => {
+        let monthPaid = 0, monthUnpaid = 0;
+        month.classes.forEach(cls => {
+          cls.students.forEach(student => {
+            let amount = parseFloat(student.amount) || 0;
+            if (student.status === "تم الدفع") monthPaid += amount;
+            else monthUnpaid += amount;
+          });
+        });
+        totalPaid += monthPaid;
+        totalUnpaid += monthUnpaid;
+        summaryTableBody.innerHTML += `
+          <tr>
+            <td>${month.name}</td>
+            <td>${monthPaid} جنيه</td>
+            <td>${monthUnpaid} جنيه</td>
+          </tr>
+        `;
+      });
+      summaryTableBody.innerHTML += `
+        <tr style="font-weight:bold;">
+          <td>الاجمالي</td>
+          <td>${totalPaid} جنيه</td>
+          <td>${totalUnpaid} جنيه</td>
+        </tr>
+      `;
+      const table = document.getElementById('summaryTableBody');
+      table.classList.remove('fade-in');
+      void table.offsetWidth;
+      table.classList.add('fade-in');
+    }
+
+    function updateMonthlyReport() {
+      const reportContainer = document.getElementById("monthlyReportContainer");
+      const reportBody = document.getElementById("monthlyReport");
+      if (!currentMonth) {
+        reportContainer.classList.add("hidden");
+        return;
+      }
+      if (currentMonth.classes.length === 0) {
+        reportBody.innerHTML = "<tr><td colspan='3'>لا يوجد صفوف في هذا الشهر.</td></tr>";
+      } else {
+        reportBody.innerHTML = "";
+        currentMonth.classes.forEach(cls => {
+          let paid = 0, unpaid = 0;
+          cls.students.forEach(student => {
+            let amount = parseFloat(student.amount) || 0;
+            if (student.status === "تم الدفع") paid += amount;
+            else unpaid += amount;
+          });
+          reportBody.innerHTML += `
+            <tr>
+              <td>${cls.name}</td>
+              <td>${paid} جنيه</td>
+              <td>${unpaid} جنيه</td>
+            </tr>
+          `;
+        });
+      }
+      reportContainer.classList.remove("hidden");
+      const rep = document.getElementById("monthlyReport");
+      rep.classList.remove('fade-in');
+      void rep.offsetWidth;
+      rep.classList.add('fade-in');
+    }
+
+    function clearMonthForm() {
+      document.getElementById('monthName').value = '';
+    }
+    function clearClassForm() {
+      document.getElementById('className').value = '';
+    }
+    function clearStudentForm() {
+      document.getElementById('studentName').value = '';
+      document.getElementById('studentAmount').value = '';
+    }
+
+    function duplicateMonth(monthId) {
+      let sourceMonth = months.find(m => m.id === monthId);
+      if (!sourceMonth) return;
+      let newMonth = JSON.parse(JSON.stringify(sourceMonth));
+      newMonth.id = months.length + 1;
+      let newName = prompt("أدخل اسم الشهر الجديد:", sourceMonth.name + " (نسخة)");
+      newMonth.name = (newName && newName.trim() !== "") ? newName.trim() : sourceMonth.name + " (نسخة)";
+      newMonth.classes.forEach(cls => {
+        cls.students.forEach(student => student.status = "لم يتم الدفع");
+      });
+      months.push(newMonth);
+      updateLocalStorage();
+      updateMonthsList();
+      generateSummaryReport();
+      showToast("تم نسخ الشهر بنجاح", "success");
+    }
+
+    document.getElementById('addMonthBtn').addEventListener('click', function () {
+      const modal = new bootstrap.Modal(document.getElementById('addMonthModal'));
+      modal.show();
+    });
+
+    document.getElementById('addMonthForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const monthName = document.getElementById('monthName').value.trim();
+      if (!monthName) {
+        showToast("يرجى إدخال اسم الشهر", "error");
+        return;
+      }
+      const month = { id: months.length + 1, name: monthName, classes: [] };
+      months.push(month);
+      updateLocalStorage();
+      updateMonthsList();
+      generateSummaryReport();
+      clearMonthForm();
+      const modal = bootstrap.Modal.getInstance(document.getElementById('addMonthModal'));
+      modal.hide();
+      showToast("تم إضافة الشهر بنجاح", "success");
+    });
+
+    function selectMonth(monthId) {
+      currentMonth = months.find(m => m.id === monthId);
+      currentClass = null;
+      updateMonthsList();
+      if (currentMonth) {
+        document.getElementById('classManagement').classList.remove('hidden');
+        updateClassesList();
+        document.getElementById('studentManagement').classList.add('hidden');
+        updateMonthlyReport();
+      }
+    }
+
+    function updateMonthsList() {
+      const monthsList = document.getElementById('monthsList');
+      monthsList.innerHTML = '';
+      months.forEach(month => {
+        const activeClass = (currentMonth && month.id === currentMonth.id) ? 'selected-item' : '';
+        monthsList.innerHTML += `
+          <li class="list-group-item d-flex justify-content-between align-items-center ${activeClass}" onclick="selectMonth(${month.id})">
+            <span>${month.name}</span>
+            <div>
+              <button onclick="event.stopPropagation(); duplicateMonth(${month.id});" class="btn btn-secondary btn-sm icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="نسخ هذا الشهر">
+                <i class="fas fa-copy"></i>
+              </button>
+              <button onclick="event.stopPropagation(); if(confirm('هل أنت متأكد من حذف هذا الشهر؟')) { deleteMonth(${month.id}); }" class="btn btn-danger-custom btn-sm icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="حذف هذا الشهر">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>
+          </li>
+        `;
+      });
+    }
+
+    function deleteMonth(id) {
+      months = months.filter(m => m.id !== id);
+      if (currentMonth && currentMonth.id === id) {
+        currentMonth = null;
+        document.getElementById('classManagement').classList.add('hidden');
+        document.getElementById('studentManagement').classList.add('hidden');
+        document.getElementById('monthlyReportContainer').classList.add('hidden');
+      }
+      updateLocalStorage();
+      updateMonthsList();
+      generateSummaryReport();
+      showToast("تم حذف الشهر", "warning");
+    }
+
+    document.getElementById('addClassBtn').addEventListener('click', function () {
+      const modal = new bootstrap.Modal(document.getElementById('addClassModal'));
+      modal.show();
+    });
+
+    document.getElementById('addClassForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const className = document.getElementById('className').value.trim();
+      if (!className) {
+        showToast("يرجى إدخال اسم الصف", "error");
+        return;
+      }
+      let duplicateClass = currentMonth.classes.find(c => c.name.toLowerCase() === className.toLowerCase());
+      if (duplicateClass) {
+        showToast("اسم الصف موجود بالفعل في هذا الشهر", "error");
+        return;
+      }
+      const cls = { id: currentMonth.classes.length + 1, name: className, students: [] };
+      currentMonth.classes.push(cls);
+      updateLocalStorage();
+      updateClassesList();
+      clearClassForm();
+      const modal = bootstrap.Modal.getInstance(document.getElementById('addClassModal'));
+      modal.hide();
+      updateMonthlyReport();
+      showToast("تم إضافة الصف بنجاح", "success");
+    });
+
+    function selectClass(classId) {
+      currentClass = currentMonth.classes.find(c => c.id === classId);
+      updateClassesList();
+      if (currentClass) {
+        document.getElementById('studentManagement').classList.remove('hidden');
+        updateStudentsTable();
+      }
+    }
+
+    function updateClassesList() {
+      const classesList = document.getElementById('classesList');
+      classesList.innerHTML = '';
+      currentMonth.classes.forEach(cls => {
+        const activeClass = (currentClass && cls.id === currentClass.id) ? 'selected-item' : '';
+        classesList.innerHTML += `
+          <li class="list-group-item d-flex justify-content-between align-items-center ${activeClass}" onclick="selectClass(${cls.id})">
+            <span>${cls.name}</span>
+            <div>
+              <button onclick="event.stopPropagation(); if(confirm('هل أنت متأكد من حذف هذا الصف؟')) { deleteClass(${cls.id}); }" class="btn btn-danger-custom btn-sm icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="حذف هذا الصف">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>
+          </li>
+        `;
+      });
+    }
+
+    function deleteClass(classId) {
+      currentMonth.classes = currentMonth.classes.filter(c => c.id !== classId);
+      if (currentClass && currentClass.id === classId) {
+        currentClass = null;
+        document.getElementById('studentManagement').classList.add('hidden');
+      }
+      updateLocalStorage();
+      updateClassesList();
+      updateMonthlyReport();
+      showToast("تم حذف الصف", "warning");
+    }
+
+    document.getElementById('addStudentForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const studentName = document.getElementById('studentName').value.trim();
+      const studentAmount = parseFloat(document.getElementById('studentAmount').value);
+      if (!studentName || isNaN(studentAmount) || studentAmount <= 0) {
+        showToast("يرجى إدخال بيانات صحيحة", "error");
+        return;
+      }
+      let duplicate = currentClass.students.find(s => s.name.toLowerCase() === studentName.toLowerCase());
+      if (duplicate) {
+        showToast("اسم الطالب موجود بالفعل في هذا الصف", "error");
+        return;
+      }
+      const student = {
+        id: currentClass.students.length + 1,
+        name: studentName,
+        amount: studentAmount,
+        status: "لم يتم الدفع"
+      };
+      currentClass.students.push(student);
+      updateLocalStorage();
+      updateStudentsTable();
+      clearStudentForm();
+      showToast("تم إضافة الطالب بنجاح", "success");
+    });
+
+    function deleteStudent(studentId) {
+      if (confirm("هل أنت متأكد من حذف هذا الطالب؟")) {
+        currentClass.students = currentClass.students.filter(s => s.id !== studentId);
+        updateLocalStorage();
+        updateStudentsTable();
+        showToast("تم حذف الطالب", "warning");
+      }
+    }
+
+    function updateStudentsTable() {
+      const studentsTableBody = document.getElementById('studentsTableBody');
+      studentsTableBody.innerHTML = '';
+      currentClass.students.forEach(student => {
+        studentsTableBody.innerHTML += `
+          <tr>
+            <td>${student.id}</td>
+            <td>${student.name}</td>
+            <td>${student.amount} جنيه</td>
+            <td class="${student.status === 'تم الدفع' ? 'status-green' : 'status-red'}">${student.status}</td>
+            <td>
+              <button onclick="togglePaymentStatus(${student.id})" class="btn btn-warning btn-sm icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="تغيير حالة السداد">
+                <i class="fas fa-sync-alt"></i>
+              </button>
+              <button onclick="deleteStudent(${student.id})" class="btn btn-danger-custom btn-sm ms-2 icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="حذف الطالب">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      generateSummaryReport();
+      updateMonthlyReport();
+    }
+
+    document.getElementById("searchStudentBtn").addEventListener("click", function() {
+      let searchTerm = document.getElementById("studentSearchInput").value.trim().toLowerCase();
+      if (!searchTerm) {
+        showToast("يرجى إدخال اسم الطالب للبحث", "error");
+        return;
+      }
+      let reportContent = document.getElementById("studentDetailReportContent");
+      reportContent.innerHTML = "";
+      let results = [];
+      months.forEach(month => {
+        month.classes.forEach(cls => {
+          cls.students.forEach(student => {
+            if(student.name.toLowerCase().includes(searchTerm)) {
+              results.push({
+                month: month.name,
+                class: cls.name,
+                name: student.name,
+                amount: student.amount,
+                status: student.status
+              });
+            }
+          });
+        });
+      });
+      if(results.length === 0){
+        reportContent.innerHTML = "<p>لم يتم العثور على الطالب المطلوب.</p>";
+      } else {
+        let html = `<table class="table table-bordered">
+                      <thead>
+                        <tr>
+                          <th>الشهر</th>
+                          <th>الصف</th>
+                          <th>اسم الطالب</th>
+                          <th>المبلغ</th>
+                          <th>حالة السداد</th>
+                        </tr>
+                      </thead>
+                      <tbody>`;
+        results.forEach(result => {
+          html += `<tr>
+                    <td>${result.month}</td>
+                    <td>${result.class}</td>
+                    <td>${result.name}</td>
+                    <td>${result.amount} جنيه</td>
+                    <td class="${result.status === 'تم الدفع' ? 'status-green' : 'status-red'}">${result.status}</td>
+                  </tr>`;
+        });
+        html += `</tbody></table>`;
+        reportContent.innerHTML = html;
+      }
+      document.getElementById("studentDetailReportContainer").classList.remove("hidden");
+    });
+
+    /* حفظ التقرير باستخدام مكتبة SheetJS (XLSX) مع تنسيق الخلايا لإظهار خطوط الجداول وتلوين عناوين الشهور والصفوف وتلوين حالة السداد
+       تم تعديل بيانات ورقة "تفاصيل الشهور" لتحتوي على اسم الشهر مباشرةً دون صف عناوين */
+    document.getElementById("saveAllPdfBtn").addEventListener("click", function() {
+      try {
+        // إعداد بيانات ورقة "تقرير شامل لجميع الأشهر"
+        const summaryData = [];
+        let overallPaid = 0, overallUnpaid = 0;
+        months.forEach(month => {
+          let monthPaid = 0, monthUnpaid = 0;
+          month.classes.forEach(cls => {
+            cls.students.forEach(student => {
+              let amount = parseFloat(student.amount) || 0;
+              if(student.status === "تم الدفع") {
+                monthPaid += amount;
+              } else {
+                monthUnpaid += amount;
+              }
+            });
+          });
+          overallPaid += monthPaid;
+          overallUnpaid += monthUnpaid;
+          summaryData.push({
+            "شهر": month.name,
+            "المبلغ المدفوع": monthPaid + " جنيه",
+            "المبلغ غير المدفوع": monthUnpaid + " جنيه"
+          });
+        });
+        summaryData.push({
+          "شهر": "الاجمالي",
+          "المبلغ المدفوع": overallPaid + " جنيه",
+          "المبلغ غير المدفوع": overallUnpaid + " جنيه"
+        });
+        
+        // إعداد بيانات ورقة "تفاصيل الشهور" بدون صف العناوين
+        const detailsData = [];
+        months.forEach(month => {
+          detailsData.push({ "الشهر": month.name });
+          month.classes.forEach(cls => {
+            cls.students.forEach(student => {
+              detailsData.push({
+                "الصف": cls.name,
+                "اسم الطالب": student.name,
+                "المبلغ": student.amount + " جنيه",
+                "حالة السداد": student.status
+              });
+            });
+          });
+          detailsData.push({}); // صف فارغ للفصل بين الشهور
+        });
+        
+        // إنشاء مصنف جديد مع تفعيل bookStyles لدعم تنسيق الخلايا
+        const wb = XLSX.utils.book_new();
+        wb.Workbook = { Views: [ { RTL: true } ] }; // دعم اتجاه الكتابة من اليمين لليسار
+        // إنشاء ورقة "تقرير شامل لجميع الأشهر"
+        const wsSummary = XLSX.utils.json_to_sheet(summaryData, {skipHeader:false});
+        // إضافة حدود لكل الخلايا في wsSummary
+        const summaryRange = XLSX.utils.decode_range(wsSummary['!ref']);
+        for(let R = summaryRange.s.r; R <= summaryRange.e.r; ++R){
+          for(let C = summaryRange.s.c; C <= summaryRange.e.c; ++C){
+            let cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+            if(wsSummary[cellRef]){
+              wsSummary[cellRef].s = wsSummary[cellRef].s || {};
+              wsSummary[cellRef].s.border = {
+                top: { style: "thin", color: { rgb: "000000" } },
+                bottom: { style: "thin", color: { rgb: "000000" } },
+                left: { style: "thin", color: { rgb: "000000" } },
+                right: { style: "thin", color: { rgb: "000000" } }
+              };
+            }
+          }
+        }
+        // إنشاء ورقة "تفاصيل الشهور"
+        const wsDetails = XLSX.utils.json_to_sheet(detailsData, {skipHeader:false});
+        const detailsRange = XLSX.utils.decode_range(wsDetails['!ref']);
+        for(let R = detailsRange.s.r; R <= detailsRange.e.r; ++R){
+          for(let C = detailsRange.s.c; C <= detailsRange.e.c; ++C){
+            let cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+            if(wsDetails[cellRef]){
+              wsDetails[cellRef].s = wsDetails[cellRef].s || {};
+              wsDetails[cellRef].s.border = {
+                top: { style: "thin", color: { rgb: "000000" } },
+                bottom: { style: "thin", color: { rgb: "000000" } },
+                left: { style: "thin", color: { rgb: "000000" } },
+                right: { style: "thin", color: { rgb: "000000" } }
+              };
+              // تمييز خلايا عنوان الشهر (العمود الأول)
+              if(C === 0 && wsDetails[cellRef].v && typeof wsDetails[cellRef].v === "string" && wsDetails[cellRef].v !== ""){
+                wsDetails[cellRef].s.fill = { fgColor: { rgb: "FF007BFF" } };
+                wsDetails[cellRef].s.font = { bold: true, color: { rgb: "FFFFFFFF" } };
+              }
+              // تلوين حالة السداد: "تم الدفع" باللون الأخضر، "لم يتم الدفع" باللون الأحمر
+              if(wsDetails[cellRef].v === "تم الدفع"){
+                wsDetails[cellRef].s.font = wsDetails[cellRef].s.font || {};
+                wsDetails[cellRef].s.font.color = { rgb: "FF008000" };
+              }
+              if(wsDetails[cellRef].v === "لم يتم الدفع"){
+                wsDetails[cellRef].s.font = wsDetails[cellRef].s.font || {};
+                wsDetails[cellRef].s.font.color = { rgb: "FFFF0000" };
+              }
+            }
+          }
+        }
+        
+        XLSX.utils.book_append_sheet(wb, wsSummary, "تقرير شامل لجميع الأشهر");
+        XLSX.utils.book_append_sheet(wb, wsDetails, "تفاصيل الشهور");
+        
+        XLSX.writeFile(wb, "report.xlsx", { bookType: "xlsx", bookSST: false, cellStyles: true });
+        showToast("تم تنزيل التقرير بنجاح", "success");
+      } catch (error) {
+        console.error("Error downloading Excel file:", error);
+        showToast("حدث خطأ أثناء تنزيل التقرير", "error");
+      }
+    });
+
+    // التعامل مع حدث beforeinstallprompt (زر التثبيت مخفي)
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+  </script>
+</body>
+</html>
