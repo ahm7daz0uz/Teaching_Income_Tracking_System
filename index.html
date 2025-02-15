@@ -374,16 +374,18 @@
       new bootstrap.Tooltip(tooltipTriggerEl);
     });
 
-    // دالة Toast
+    // تعديل دالة showToast لتدعم النوع "primary"
     function showToast(message, type) {
       const toastEl = document.getElementById("toastContainer");
       const toastBody = document.getElementById("toastMessage");
       toastBody.innerHTML = `<div style="display: flex; align-items: center; width: 100%;">
         <span>${message}</span>
       </div>`;
-      toastEl.classList.remove("bg-success", "bg-danger", "bg-warning", "bg-info", "text-white", "text-dark");
-      // "success" للون الأخضر، "warning" للون الأصفر، "error" للون الأحمر.
-      if (type === "success") {
+      toastEl.classList.remove("bg-success", "bg-danger", "bg-warning", "bg-info", "bg-primary", "text-white", "text-dark");
+      // "primary" للون الأزرق (نفس لون أزرار الإضافة والحفظ)
+      if (type === "primary") {
+        toastEl.classList.add("bg-primary", "text-white");
+      } else if (type === "success") {
         toastEl.classList.add("bg-success", "text-white");
       } else if (type === "error") {
         toastEl.classList.add("bg-danger", "text-white");
@@ -428,7 +430,7 @@
       }
     }
 
-    // دوال العمليات لنتائج البحث (تعمل على تحديث البيانات في البنية العالمية)
+    // دوال العمليات لنتائج البحث
     function changeAmountSearch(monthId, classId, studentId) {
       const m = months.find(m => m.id === monthId);
       if (!m) return;
@@ -487,8 +489,7 @@
       localStorage.setItem('months', JSON.stringify(months));
     }
 
-    // ملاحظة: لتخزين البيانات بشكل دائم (حتى بعد مسح بيانات المتصفح)، يُفضل استخدام خادم خارجي وقاعدة بيانات.
-    // هنا نستخدم localStorage فقط، والذي يمكن للمستخدم مسحه.
+    // ملاحظة: لتخزين البيانات بشكل دائم يجب استخدام خادم خارجي؛ هنا نستخدم localStorage فقط.
     function loadData() {
       const savedData = localStorage.getItem('months');
       if (savedData) {
@@ -618,7 +619,7 @@
       clearMonthForm();
       const modal = bootstrap.Modal.getInstance(document.getElementById('addMonthModal'));
       modal.hide();
-      showToast("تم إضافة الشهر بنجاح", "success");
+      showToast("تم إضافة الشهر بنجاح", "primary");
     });
 
     function selectMonth(monthId) {
@@ -665,7 +666,7 @@
       updateLocalStorage();
       updateMonthsList();
       generateSummaryReport();
-      showToast("تم حذف الشهر بنجاح", "success");
+      showToast("تم حذف الشهر بنجاح", "error");
     }
 
     document.getElementById('addClassBtn').addEventListener('click', function () {
@@ -693,7 +694,7 @@
       const modal = bootstrap.Modal.getInstance(document.getElementById('addClassModal'));
       modal.hide();
       updateMonthlyReport();
-      showToast("تم إضافة الصف بنجاح", "success");
+      showToast("تم إضافة الصف بنجاح", "primary");
     });
 
     function selectClass(classId) {
@@ -732,7 +733,7 @@
       updateLocalStorage();
       updateClassesList();
       updateMonthlyReport();
-      showToast("تم حذف الصف بنجاح", "success");
+      showToast("تم حذف الصف بنجاح", "error");
     }
 
     document.getElementById('addStudentForm').addEventListener('submit', function (e) {
@@ -759,7 +760,7 @@
       updateLocalStorage();
       updateStudentsTable();
       clearStudentForm();
-      showToast("تم إضافة الطالب بنجاح", "success");
+      showToast("تم إضافة الطالب بنجاح", "primary");
     });
 
     function deleteStudent(studentId) {
@@ -977,7 +978,7 @@
         XLSX.utils.book_append_sheet(wb, wsDetails, "تفاصيل الشهور");
         
         XLSX.writeFile(wb, "report.xlsx", { bookType: "xlsx", bookSST: false, cellStyles: true });
-        showToast("تم تنزيل التقرير بنجاح", "success");
+        showToast("تم تنزيل التقرير بنجاح", "primary");
       } catch (error) {
         console.error("Error downloading Excel file:", error);
         showToast("حدث خطأ أثناء تنزيل التقرير", "error");
