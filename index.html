@@ -74,7 +74,7 @@
     .icon-btn {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 10px;
       transition: transform 0.2s ease;
     }
     .icon-btn:hover {
@@ -110,8 +110,12 @@
       height: 2px;
       background: var(--text-color);
     }
-    .section-header::before { left: 0; }
-    .section-header::after { right: 0; }
+    .section-header::before {
+      left: 0;
+    }
+    .section-header::after {
+      right: 0;
+    }
     .section-header span {
       padding: 0 10px;
       background: var(--bg-color);
@@ -141,10 +145,33 @@
       box-shadow: none;
       border-color: var(--button-color);
     }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .fade-in { animation: fadeIn 0.5s; }
-    tbody tr:hover { background-color: #f1f1f1; }
-    .toast { min-width: 250px; }
+    /* لجميع خلايا الجداول عرض النص أفقيًا */
+    table th, table td {
+      white-space: nowrap;
+    }
+    /* محاذاة رؤوس الأعمدة في الجداول في المنتصف */
+    table thead th {
+      text-align: center;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .fade-in {
+      animation: fadeIn 0.5s;
+    }
+    tbody tr:hover {
+      background-color: #f1f1f1;
+    }
+    .toast {
+      min-width: 250px;
+    }
+    .table-instruction {
+      font-size: 0.9rem;
+      color: #555;
+      margin-top: 5px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -178,6 +205,12 @@
       <button id="searchStudentBtn" class="btn btn-primary">بحث</button>
     </div>
   </div>
+  
+  <!-- جدول نتائج البحث -->
+  <div id="searchResultsContainer" class="container mt-3 fade-in hidden">
+    <div class="table-responsive" id="searchResultsTableWrapper"></div>
+    <p class="table-instruction">إذا لم يظهر الجدول بالكامل، يرجى التمرير أفقيًا.</p>
+  </div>
 
   <!-- تقرير تفصيلي للطالب -->
   <div id="studentDetailReportContainer" class="container mt-3 hidden fade-in">
@@ -188,16 +221,19 @@
   <!-- تقرير شامل لجميع الأشهر -->
   <div class="container report mt-3 fade-in">
     <div class="section-header"><span><i class="fas fa-chart-bar"></i> تقرير شامل لجميع الأشهر</span></div>
-    <table class="table table-bordered">
-      <thead>
-        <tr>
-          <th>شهر</th>
-          <th>المبلغ المدفوع</th>
-          <th>المبلغ غير المدفوع</th>
-        </tr>
-      </thead>
-      <tbody id="summaryTableBody"></tbody>
-    </table>
+    <div class="table-responsive">
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>شهر</th>
+            <th>المبلغ المدفوع</th>
+            <th>المبلغ غير المدفوع</th>
+          </tr>
+        </thead>
+        <tbody id="summaryTableBody"></tbody>
+      </table>
+    </div>
+    <p class="table-instruction">إذا لم يظهر الجدول بالكامل، يرجى التمرير أفقيًا.</p>
     <div class="mt-3">
       <button id="saveAllPdfBtn" class="btn btn-primary">
         <i class="fas fa-file-excel"></i> حفظ التقرير بصيغة إكسيل
@@ -220,16 +256,19 @@
   <!-- تقرير شهري للشهر المُختار -->
   <div id="monthlyReportContainer" class="container mt-3 hidden fade-in">
     <h4 class="monthly-report-header">تقرير شهري للشهر المُختار</h4>
-    <table class="table table-bordered">
-      <thead>
-        <tr>
-          <th>الصف</th>
-          <th>المبلغ المدفوع</th>
-          <th>المبلغ غير المدفوع</th>
-        </tr>
-      </thead>
-      <tbody id="monthlyReport"></tbody>
-    </table>
+    <div class="table-responsive">
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>الصف</th>
+            <th>المبلغ المدفوع</th>
+            <th>المبلغ غير المدفوع</th>
+          </tr>
+        </thead>
+        <tbody id="monthlyReport"></tbody>
+      </table>
+    </div>
+    <p class="table-instruction">إذا لم يظهر الجدول بالكامل، يرجى التمرير أفقيًا.</p>
   </div>
 
   <!-- إدارة الصفوف -->
@@ -266,18 +305,22 @@
         إضافة الطالب
       </button>
     </form>
-    <table class="table table-bordered mt-3 fade-in">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>اسم الطالب</th>
-          <th>المبلغ</th>
-          <th>حالة السداد</th>
-          <th>العمليات</th>
-        </tr>
-      </thead>
-      <tbody id="studentsTableBody"></tbody>
-    </table>
+    <div class="table-responsive mt-3">
+      <table class="table table-bordered fade-in">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>اسم الطالب</th>
+            <th>المبلغ</th>
+            <th>حالة السداد</th>
+            <th>وقت آخر تحديث</th>
+            <th>العمليات</th>
+          </tr>
+        </thead>
+        <tbody id="studentsTableBody"></tbody>
+      </table>
+    </div>
+    <p class="table-instruction">إذا لم يظهر الجدول بالكامل، يرجى التمرير أفقيًا.</p>
   </div>
 
   <!-- مودال إضافة شهر جديد -->
@@ -356,11 +399,29 @@
       toast.show();
     }
 
-    // تعديل حالة السداد
+    // دالة لتغيير قيمة المبلغ
+    function changeAmount(studentId) {
+      const student = currentClass.students.find(s => s.id === studentId);
+      if (!student) return;
+      let newAmount = prompt("أدخل المبلغ الجديد:");
+      newAmount = parseFloat(newAmount);
+      if (isNaN(newAmount) || newAmount <= 0) {
+        showToast("يرجى إدخال مبلغ صحيح أكبر من 0", "error");
+        return;
+      }
+      student.amount = newAmount;
+      student.lastUpdate = new Date().toLocaleString("ar-EG");
+      updateLocalStorage();
+      updateStudentsTable();
+      showToast("تم تغيير قيمة المبلغ", "success");
+    }
+
+    // تعديل حالة السداد وتحديث وقت آخر تحديث
     function togglePaymentStatus(studentId) {
       const student = currentClass.students.find(s => s.id === studentId);
       if (student) {
         student.status = student.status === "لم يتم الدفع" ? "تم الدفع" : "لم يتم الدفع";
+        student.lastUpdate = new Date().toLocaleString("ar-EG");
         updateLocalStorage();
         updateStudentsTable();
         showToast("تم تغيير حالة السداد بنجاح", "success");
@@ -638,7 +699,8 @@
         id: currentClass.students.length + 1,
         name: studentName,
         amount: studentAmount,
-        status: "لم يتم الدفع"
+        status: "لم يتم الدفع",
+        lastUpdate: new Date().toLocaleString("ar-EG")
       };
       currentClass.students.push(student);
       updateLocalStorage();
@@ -650,6 +712,10 @@
     function deleteStudent(studentId) {
       if (confirm("هل أنت متأكد من حذف هذا الطالب؟")) {
         currentClass.students = currentClass.students.filter(s => s.id !== studentId);
+        // إعادة ترقيم الطلاب بعد الحذف
+        currentClass.students.forEach((student, index) => {
+          student.id = index + 1;
+        });
         updateLocalStorage();
         updateStudentsTable();
         showToast("تم حذف الطالب", "warning");
@@ -666,11 +732,15 @@
             <td>${student.name}</td>
             <td>${student.amount} جنيه</td>
             <td class="${student.status === 'تم الدفع' ? 'status-green' : 'status-red'}">${student.status}</td>
+            <td>${student.lastUpdate || ""}</td>
             <td>
-              <button onclick="togglePaymentStatus(${student.id})" class="btn btn-warning btn-sm icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="تغيير حالة السداد">
+              <button onclick="changeAmount(${student.id})" class="btn btn-warning btn-sm icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="تغيير قيمة المبلغ">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button onclick="togglePaymentStatus(${student.id})" class="btn btn-success btn-sm icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="تغيير حالة السداد">
                 <i class="fas fa-sync-alt"></i>
               </button>
-              <button onclick="deleteStudent(${student.id})" class="btn btn-danger-custom btn-sm ms-2 icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="حذف الطالب">
+              <button onclick="deleteStudent(${student.id})" class="btn btn-danger-custom btn-sm icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="حذف الطالب">
                 <i class="fas fa-trash-alt"></i>
               </button>
             </td>
@@ -687,8 +757,20 @@
         showToast("يرجى إدخال اسم الطالب للبحث", "error");
         return;
       }
-      let reportContent = document.getElementById("studentDetailReportContent");
-      reportContent.innerHTML = "";
+      let html = `<div class="table-responsive">
+                    <table class="table table-bordered">
+                      <thead>
+                        <tr>
+                          <th>الشهر</th>
+                          <th>الصف</th>
+                          <th>اسم الطالب</th>
+                          <th>المبلغ</th>
+                          <th>حالة السداد</th>
+                          <th>وقت آخر تحديث</th>
+                          <th>العمليات</th>
+                        </tr>
+                      </thead>
+                      <tbody>`;
       let results = [];
       months.forEach(month => {
         month.classes.forEach(cls => {
@@ -699,26 +781,17 @@
                 class: cls.name,
                 name: student.name,
                 amount: student.amount,
-                status: student.status
+                status: student.status,
+                lastUpdate: student.lastUpdate || "",
+                id: student.id
               });
             }
           });
         });
       });
       if(results.length === 0){
-        reportContent.innerHTML = "<p>لم يتم العثور على الطالب المطلوب.</p>";
+        html += `<tr><td colspan="7">لم يتم العثور على الطالب المطلوب.</td></tr>`;
       } else {
-        let html = `<table class="table table-bordered">
-                      <thead>
-                        <tr>
-                          <th>الشهر</th>
-                          <th>الصف</th>
-                          <th>اسم الطالب</th>
-                          <th>المبلغ</th>
-                          <th>حالة السداد</th>
-                        </tr>
-                      </thead>
-                      <tbody>`;
         results.forEach(result => {
           html += `<tr>
                     <td>${result.month}</td>
@@ -726,16 +799,25 @@
                     <td>${result.name}</td>
                     <td>${result.amount} جنيه</td>
                     <td class="${result.status === 'تم الدفع' ? 'status-green' : 'status-red'}">${result.status}</td>
+                    <td>${result.lastUpdate}</td>
+                    <td>
+                      <button onclick="togglePaymentStatus(${result.id})" class="btn btn-success btn-sm icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="تغيير حالة السداد">
+                        <i class="fas fa-sync-alt"></i>
+                      </button>
+                      <button onclick="deleteStudent(${result.id})" class="btn btn-danger-custom btn-sm icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="حذف الطالب">
+                        <i class="fas fa-trash-alt"></i>
+                      </button>
+                    </td>
                   </tr>`;
         });
-        html += `</tbody></table>`;
-        reportContent.innerHTML = html;
       }
-      document.getElementById("studentDetailReportContainer").classList.remove("hidden");
+      html += `</tbody></table></div>`;
+      document.getElementById("searchResultsTableWrapper").innerHTML = html;
+      document.getElementById("searchResultsContainer").classList.remove("hidden");
     });
 
-    /* حفظ التقرير باستخدام مكتبة SheetJS (XLSX) مع تنسيق الخلايا لإظهار خطوط الجداول وتلوين عناوين الشهور والصفوف وتلوين حالة السداد
-       تم تعديل بيانات ورقة "تفاصيل الشهور" لتحتوي على اسم الشهر مباشرةً دون صف عناوين */
+    /* حفظ التقرير باستخدام مكتبة SheetJS (XLSX) مع تنسيق الخلايا لإظهار حدود الجدول وتلوين العناوين
+       تم تعديل بيانات ورقة "تفاصيل الشهور" لتحتوي على اسم الشهر ووقت آخر تحديث لكل طالب */
     document.getElementById("saveAllPdfBtn").addEventListener("click", function() {
       try {
         // إعداد بيانات ورقة "تقرير شامل لجميع الأشهر"
@@ -777,7 +859,8 @@
                 "الصف": cls.name,
                 "اسم الطالب": student.name,
                 "المبلغ": student.amount + " جنيه",
-                "حالة السداد": student.status
+                "حالة السداد": student.status,
+                "وقت آخر تحديث": student.lastUpdate || ""
               });
             });
           });
