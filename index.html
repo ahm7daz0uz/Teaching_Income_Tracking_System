@@ -382,7 +382,7 @@
         <span>${message}</span>
       </div>`;
       toastEl.classList.remove("bg-success", "bg-danger", "bg-warning", "bg-info", "text-white", "text-dark");
-      // النوع "warning" سيظهر باللون الأصفر، "error" باللون الأحمر
+      // "success" للون الأخضر، "warning" للون الأصفر، "error" للون الأحمر.
       if (type === "success") {
         toastEl.classList.add("bg-success", "text-white");
       } else if (type === "error") {
@@ -487,6 +487,8 @@
       localStorage.setItem('months', JSON.stringify(months));
     }
 
+    // ملاحظة: لتخزين البيانات بشكل دائم (حتى بعد مسح بيانات المتصفح)، يُفضل استخدام خادم خارجي وقاعدة بيانات.
+    // هنا نستخدم localStorage فقط، والذي يمكن للمستخدم مسحه.
     function loadData() {
       const savedData = localStorage.getItem('months');
       if (savedData) {
@@ -663,7 +665,7 @@
       updateLocalStorage();
       updateMonthsList();
       generateSummaryReport();
-      showToast("تم حذف الشهر", "warning");
+      showToast("تم حذف الشهر بنجاح", "success");
     }
 
     document.getElementById('addClassBtn').addEventListener('click', function () {
@@ -712,7 +714,7 @@
           <li class="list-group-item d-flex justify-content-between align-items-center ${activeClass}" onclick="selectClass(${cls.id})">
             <span>${cls.name}</span>
             <div>
-              <button onclick="event.stopPropagation(); if(confirm('هل أنت متأكد من حذف هذا الصف؟')) { deleteClass(${cls.id}); }" class="btn btn-danger-custom btn-sm icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="حذف هذا الصف">
+              <button onclick="event.stopPropagation(); if(confirm('هل أنت متأكد من حذف هذا الفصل؟')) { deleteClass(${cls.id}); }" class="btn btn-danger-custom btn-sm icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="حذف هذا الفصل">
                 <i class="fas fa-trash-alt"></i>
               </button>
             </div>
@@ -730,7 +732,7 @@
       updateLocalStorage();
       updateClassesList();
       updateMonthlyReport();
-      showToast("تم حذف الصف", "warning");
+      showToast("تم حذف الصف بنجاح", "success");
     }
 
     document.getElementById('addStudentForm').addEventListener('submit', function (e) {
