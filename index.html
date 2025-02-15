@@ -374,7 +374,7 @@
       new bootstrap.Tooltip(tooltipTriggerEl);
     });
 
-    // دالة Toast تظهر الرسالة لمدة 1000 مللي ثانية
+    // دالة Toast
     function showToast(message, type) {
       const toastEl = document.getElementById("toastContainer");
       const toastBody = document.getElementById("toastMessage");
@@ -382,6 +382,7 @@
         <span>${message}</span>
       </div>`;
       toastEl.classList.remove("bg-success", "bg-danger", "bg-warning", "bg-info", "text-white", "text-dark");
+      // النوع "warning" سيظهر باللون الأصفر، "error" باللون الأحمر
       if (type === "success") {
         toastEl.classList.add("bg-success", "text-white");
       } else if (type === "error") {
@@ -399,7 +400,7 @@
       toast.show();
     }
 
-    // دالة لتغيير قيمة المبلغ
+    // دوال العمليات للجدول الإداري
     function changeAmount(studentId) {
       const student = currentClass.students.find(s => s.id === studentId);
       if (!student) return;
@@ -413,10 +414,9 @@
       student.lastUpdate = new Date().toLocaleString("ar-EG");
       updateLocalStorage();
       updateStudentsTable();
-      showToast("تم تغيير قيمة المبلغ", "success");
+      showToast("تم تغيير القيمة بنجاح", "warning");
     }
 
-    // تعديل حالة السداد وتحديث وقت آخر تحديث
     function togglePaymentStatus(studentId) {
       const student = currentClass.students.find(s => s.id === studentId);
       if (student) {
@@ -426,6 +426,57 @@
         updateStudentsTable();
         showToast("تم تغيير حالة السداد بنجاح", "success");
       }
+    }
+
+    // دوال العمليات لنتائج البحث (تعمل على تحديث البيانات في البنية العالمية)
+    function changeAmountSearch(monthId, classId, studentId) {
+      const m = months.find(m => m.id === monthId);
+      if (!m) return;
+      const c = m.classes.find(c => c.id === classId);
+      if (!c) return;
+      const student = c.students.find(s => s.id === studentId);
+      if (!student) return;
+      let newAmount = prompt("أدخل المبلغ الجديد:");
+      newAmount = parseFloat(newAmount);
+      if (isNaN(newAmount) || newAmount <= 0) {
+        showToast("يرجى إدخال مبلغ صحيح أكبر من 0", "error");
+        return;
+      }
+      student.amount = newAmount;
+      student.lastUpdate = new Date().toLocaleString("ar-EG");
+      updateLocalStorage();
+      updateStudentsTable();
+      renderSearchResults();
+      showToast("تم تغيير القيمة بنجاح", "warning");
+    }
+
+    function togglePaymentStatusSearch(monthId, classId, studentId) {
+      const m = months.find(m => m.id === monthId);
+      if (!m) return;
+      const c = m.classes.find(c => c.id === classId);
+      if (!c) return;
+      const student = c.students.find(s => s.id === studentId);
+      if (!student) return;
+      student.status = student.status === "لم يتم الدفع" ? "تم الدفع" : "لم يتم الدفع";
+      student.lastUpdate = new Date().toLocaleString("ar-EG");
+      updateLocalStorage();
+      updateStudentsTable();
+      renderSearchResults();
+      showToast("تم تغيير حالة السداد بنجاح", "success");
+    }
+
+    function deleteStudentSearch(monthId, classId, studentId) {
+      if (!confirm("هل أنت متأكد من حذف هذا الطالب؟")) return;
+      const m = months.find(m => m.id === monthId);
+      if (!m) return;
+      const c = m.classes.find(c => c.id === classId);
+      if (!c) return;
+      c.students = c.students.filter(s => s.id !== studentId);
+      c.students.forEach((s, index) => { s.id = index + 1; });
+      updateLocalStorage();
+      updateStudentsTable();
+      renderSearchResults();
+      showToast("تم حذف الطالب بنجاح", "error");
     }
 
     let months = [];
@@ -712,13 +763,12 @@
     function deleteStudent(studentId) {
       if (confirm("هل أنت متأكد من حذف هذا الطالب؟")) {
         currentClass.students = currentClass.students.filter(s => s.id !== studentId);
-        // إعادة ترقيم الطلاب بعد الحذف
         currentClass.students.forEach((student, index) => {
           student.id = index + 1;
         });
         updateLocalStorage();
         updateStudentsTable();
-        showToast("تم حذف الطالب", "warning");
+        showToast("تم حذف الطالب بنجاح", "error");
       }
     }
 
@@ -751,12 +801,26 @@
       updateMonthlyReport();
     }
 
-    document.getElementById("searchStudentBtn").addEventListener("click", function() {
-      let searchTerm = document.getElementById("studentSearchInput").value.trim().toLowerCase();
-      if (!searchTerm) {
-        showToast("يرجى إدخال اسم الطالب للبحث", "error");
-        return;
+    // استخدام Event Delegation لجدول نتائج البحث
+    document.getElementById("searchResultsTableWrapper").addEventListener("click", function(e) {
+      let btn = e.target.closest("button");
+      if (!btn) return;
+      let action = btn.getAttribute("data-action");
+      let monthId = parseInt(btn.getAttribute("data-month-id"));
+      let classId = parseInt(btn.getAttribute("data-class-id"));
+      let studentId = parseInt(btn.getAttribute("data-student-id"));
+      if (action === "changeAmount") {
+        changeAmountSearch(monthId, classId, studentId);
+      } else if (action === "toggleStatus") {
+        togglePaymentStatusSearch(monthId, classId, studentId);
+      } else if (action === "deleteStudent") {
+        deleteStudentSearch(monthId, classId, studentId);
       }
+    });
+
+    // إعادة رسم نتائج البحث باستخدام نفس العمليات
+    function renderSearchResults() {
+      let searchTerm = document.getElementById("studentSearchInput").value.trim().toLowerCase();
       let html = `<div class="table-responsive">
                     <table class="table table-bordered">
                       <thead>
@@ -771,56 +835,50 @@
                         </tr>
                       </thead>
                       <tbody>`;
-      let results = [];
+      let found = false;
       months.forEach(month => {
         month.classes.forEach(cls => {
           cls.students.forEach(student => {
             if(student.name.toLowerCase().includes(searchTerm)) {
-              results.push({
-                month: month.name,
-                class: cls.name,
-                name: student.name,
-                amount: student.amount,
-                status: student.status,
-                lastUpdate: student.lastUpdate || "",
-                id: student.id
-              });
+              found = true;
+              html += `<tr>
+                        <td>${month.name}</td>
+                        <td>${cls.name}</td>
+                        <td>${student.name}</td>
+                        <td>${student.amount} جنيه</td>
+                        <td class="${student.status === 'تم الدفع' ? 'status-green' : 'status-red'}">${student.status}</td>
+                        <td>${student.lastUpdate || ""}</td>
+                        <td>
+                          <button data-action="changeAmount" data-month-id="${month.id}" data-class-id="${cls.id}" data-student-id="${student.id}" class="btn btn-warning btn-sm icon-btn" title="تغيير قيمة المبلغ">
+                            <i class="fas fa-edit"></i>
+                          </button>
+                          <button data-action="toggleStatus" data-month-id="${month.id}" data-class-id="${cls.id}" data-student-id="${student.id}" class="btn btn-success btn-sm icon-btn" title="تغيير حالة السداد">
+                            <i class="fas fa-sync-alt"></i>
+                          </button>
+                          <button data-action="deleteStudent" data-month-id="${month.id}" data-class-id="${cls.id}" data-student-id="${student.id}" class="btn btn-danger-custom btn-sm icon-btn" title="حذف الطالب">
+                            <i class="fas fa-trash-alt"></i>
+                          </button>
+                        </td>
+                      </tr>`;
             }
           });
         });
       });
-      if(results.length === 0){
+      if(!found){
         html += `<tr><td colspan="7">لم يتم العثور على الطالب المطلوب.</td></tr>`;
-      } else {
-        results.forEach(result => {
-          html += `<tr>
-                    <td>${result.month}</td>
-                    <td>${result.class}</td>
-                    <td>${result.name}</td>
-                    <td>${result.amount} جنيه</td>
-                    <td class="${result.status === 'تم الدفع' ? 'status-green' : 'status-red'}">${result.status}</td>
-                    <td>${result.lastUpdate}</td>
-                    <td>
-                      <button onclick="togglePaymentStatus(${result.id})" class="btn btn-success btn-sm icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="تغيير حالة السداد">
-                        <i class="fas fa-sync-alt"></i>
-                      </button>
-                      <button onclick="deleteStudent(${result.id})" class="btn btn-danger-custom btn-sm icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="حذف الطالب">
-                        <i class="fas fa-trash-alt"></i>
-                      </button>
-                    </td>
-                  </tr>`;
-        });
       }
       html += `</tbody></table></div>`;
       document.getElementById("searchResultsTableWrapper").innerHTML = html;
       document.getElementById("searchResultsContainer").classList.remove("hidden");
+    }
+
+    document.getElementById("searchStudentBtn").addEventListener("click", function() {
+      renderSearchResults();
     });
 
-    /* حفظ التقرير باستخدام مكتبة SheetJS (XLSX) مع تنسيق الخلايا لإظهار حدود الجدول وتلوين العناوين
-       تم تعديل بيانات ورقة "تفاصيل الشهور" لتحتوي على اسم الشهر ووقت آخر تحديث لكل طالب */
+    /* حفظ التقرير باستخدام مكتبة SheetJS (XLSX) */
     document.getElementById("saveAllPdfBtn").addEventListener("click", function() {
       try {
-        // إعداد بيانات ورقة "تقرير شامل لجميع الأشهر"
         const summaryData = [];
         let overallPaid = 0, overallUnpaid = 0;
         months.forEach(month => {
@@ -849,7 +907,6 @@
           "المبلغ غير المدفوع": overallUnpaid + " جنيه"
         });
         
-        // إعداد بيانات ورقة "تفاصيل الشهور" بدون صف العناوين
         const detailsData = [];
         months.forEach(month => {
           detailsData.push({ "الشهر": month.name });
@@ -864,15 +921,12 @@
               });
             });
           });
-          detailsData.push({}); // صف فارغ للفصل بين الشهور
+          detailsData.push({}); 
         });
         
-        // إنشاء مصنف جديد مع تفعيل bookStyles لدعم تنسيق الخلايا
         const wb = XLSX.utils.book_new();
-        wb.Workbook = { Views: [ { RTL: true } ] }; // دعم اتجاه الكتابة من اليمين لليسار
-        // إنشاء ورقة "تقرير شامل لجميع الأشهر"
+        wb.Workbook = { Views: [ { RTL: true } ] };
         const wsSummary = XLSX.utils.json_to_sheet(summaryData, {skipHeader:false});
-        // إضافة حدود لكل الخلايا في wsSummary
         const summaryRange = XLSX.utils.decode_range(wsSummary['!ref']);
         for(let R = summaryRange.s.r; R <= summaryRange.e.r; ++R){
           for(let C = summaryRange.s.c; C <= summaryRange.e.c; ++C){
@@ -888,7 +942,6 @@
             }
           }
         }
-        // إنشاء ورقة "تفاصيل الشهور"
         const wsDetails = XLSX.utils.json_to_sheet(detailsData, {skipHeader:false});
         const detailsRange = XLSX.utils.decode_range(wsDetails['!ref']);
         for(let R = detailsRange.s.r; R <= detailsRange.e.r; ++R){
@@ -902,12 +955,10 @@
                 left: { style: "thin", color: { rgb: "000000" } },
                 right: { style: "thin", color: { rgb: "000000" } }
               };
-              // تمييز خلايا عنوان الشهر (العمود الأول)
               if(C === 0 && wsDetails[cellRef].v && typeof wsDetails[cellRef].v === "string" && wsDetails[cellRef].v !== ""){
                 wsDetails[cellRef].s.fill = { fgColor: { rgb: "FF007BFF" } };
                 wsDetails[cellRef].s.font = { bold: true, color: { rgb: "FFFFFFFF" } };
               }
-              // تلوين حالة السداد: "تم الدفع" باللون الأخضر، "لم يتم الدفع" باللون الأحمر
               if(wsDetails[cellRef].v === "تم الدفع"){
                 wsDetails[cellRef].s.font = wsDetails[cellRef].s.font || {};
                 wsDetails[cellRef].s.font.color = { rgb: "FF008000" };
@@ -931,7 +982,6 @@
       }
     });
 
-    // التعامل مع حدث beforeinstallprompt (زر التثبيت مخفي)
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
