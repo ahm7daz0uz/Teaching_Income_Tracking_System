@@ -2,10 +2,11 @@ const CACHE_NAME = 'teacher-income-tracker-cache-v1';
 const urlsToCache = [
   './index.html',
   './manifest.json',
-  // أضف الملفات الإضافية إن لزم الأمر
+  // الملفات الأساسية للتطبيق
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css'
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css',
+  'https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap'
 ];
 
 self.addEventListener('install', event => {

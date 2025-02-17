@@ -368,13 +368,22 @@
   <!-- Bootstrap Bundle with Popper.js -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    // تسجيل service worker لجعل التطبيق يعمل بدون اتصال بالإنترنت
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(reg => console.log('Service Worker registered.', reg))
+          .catch(err => console.error('Service Worker registration failed:', err));
+      });
+    }
+
     // تفعيل التلميحات
     const tooltipTriggerList = Array.from(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.forEach(tooltipTriggerEl => {
       new bootstrap.Tooltip(tooltipTriggerEl);
     });
 
-    // تعديل دالة showToast لتدعم النوع "primary"
+    // دالة Toast مع دعم النوع "primary" للون الأزرق (نفس لون أزرار الإضافة والحفظ)
     function showToast(message, type) {
       const toastEl = document.getElementById("toastContainer");
       const toastBody = document.getElementById("toastMessage");
@@ -382,7 +391,6 @@
         <span>${message}</span>
       </div>`;
       toastEl.classList.remove("bg-success", "bg-danger", "bg-warning", "bg-info", "bg-primary", "text-white", "text-dark");
-      // "primary" للون الأزرق (نفس لون أزرار الإضافة والحفظ)
       if (type === "primary") {
         toastEl.classList.add("bg-primary", "text-white");
       } else if (type === "success") {
@@ -489,7 +497,7 @@
       localStorage.setItem('months', JSON.stringify(months));
     }
 
-    // ملاحظة: لتخزين البيانات بشكل دائم يجب استخدام خادم خارجي؛ هنا نستخدم localStorage فقط.
+    // ملاحظة: لتخزين البيانات بشكل دائم (حتى بعد مسح بيانات المتصفح) يُفضل استخدام خادم خارجي؛ هنا نستخدم localStorage فقط.
     function loadData() {
       const savedData = localStorage.getItem('months');
       if (savedData) {
@@ -711,11 +719,12 @@
       classesList.innerHTML = '';
       currentMonth.classes.forEach(cls => {
         const activeClass = (currentClass && cls.id === currentClass.id) ? 'selected-item' : '';
+        // تغيير نص تأكيد الحذف من "الفصل" إلى "الصف"
         classesList.innerHTML += `
           <li class="list-group-item d-flex justify-content-between align-items-center ${activeClass}" onclick="selectClass(${cls.id})">
             <span>${cls.name}</span>
             <div>
-              <button onclick="event.stopPropagation(); if(confirm('هل أنت متأكد من حذف هذا الفصل؟')) { deleteClass(${cls.id}); }" class="btn btn-danger-custom btn-sm icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="حذف هذا الفصل">
+              <button onclick="event.stopPropagation(); if(confirm('هل أنت متأكد من حذف هذا الصف؟')) { deleteClass(${cls.id}); }" class="btn btn-danger-custom btn-sm icon-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="حذف هذا الصف">
                 <i class="fas fa-trash-alt"></i>
               </button>
             </div>
